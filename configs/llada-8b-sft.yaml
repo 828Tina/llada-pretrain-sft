@@ -1,0 +1,29 @@
+# ModelArguments
+model_name_or_path: /data/lxy/diffusion/llada-8b
+lora: true
+target_modules: all-linear
+r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+# DataArguments
+dataset_args: /data/lxy/diffusion/data/alpaca-zh-gpt[train:2000,test:200]
+num_proc: 8
+max_length: 1024
+load_preprocessed_data: true
+
+
+# TrainingArguments
+output_dir: /data/lxy/diffusion/output/llada-gpu1-epoch-test
+run_name: llada-alpaca-zh-epoch-test
+learning_rate: 3.0e-4
+warmup_ratio: 0.1
+# num_train_epochs: 1
+max_steps: 10
+per_device_train_batch_size: 2
+per_device_eval_batch_size: 2
+gradient_accumulation_steps: 8
+logging_steps: 2
+eval_strategy: steps
+eval_steps: 200
+save_steps: 1000

@@ -1,0 +1,12 @@
+transformers==4.57.2
+modelscope[datasets]
+peft
+swanlab
+accelerate
+addict
+evalscope
+datasets
+torch
+torchvision
+torchaudio
+deepspeed

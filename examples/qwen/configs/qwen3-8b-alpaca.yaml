@@ -1,0 +1,37 @@
+# --------------  model  --------------
+model_name_or_path: /data/lxy/Qwen/qwen3-8b-base
+dtype: bfloat16
+lora: true
+target_modules: all-linear
+r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+
+# --------------  data  --------------
+dataset_args: /data/lxy/diffusion/data/alpaca-zh-gpt[train:2000,test:200]
+disable_caching: false
+max_length: 1024
+truncation: right
+num_proc: 8
+
+# --------------  training  --------------
+output_dir: /data/lxy/diffusion/output/qwen3-8b-epoch-200
+report_to: swanlab
+run_name: qwen3-alpaca-zh-epoch-200
+seed: 42
+per_device_train_batch_size: 2
+per_device_eval_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-5
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+num_train_epochs: 200
+logging_steps: 10
+eval_on_start: false
+eval_strategy: steps
+eval_steps: 500
+save_steps: 500
+save_only_model: true
+save_total_limit: 2
