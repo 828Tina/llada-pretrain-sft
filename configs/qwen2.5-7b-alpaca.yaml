@@ -16,9 +16,9 @@ truncation: right
 num_proc: 8
 
 # --------------  training  --------------
-output_dir: /data/lxy/diffusion/output/qwen2.5-7b-epoch-3
+output_dir: /data/lxy/diffusion/output/qwen-test
 report_to: swanlab
-run_name: qwen2.5-alpaca-zh-epoch-3
+run_name: qwen-test
 seed: 42
 per_device_train_batch_size: 2
 per_device_eval_batch_size: 2
@@ -27,7 +27,8 @@ learning_rate: 2.0e-5
 lr_scheduler_type: cosine
 warmup_ratio: 0.1
 bf16: true
-num_train_epochs: 3
+# num_train_epochs: 3
+max_steps: 10
 logging_steps: 10
 eval_on_start: false
 eval_strategy: steps

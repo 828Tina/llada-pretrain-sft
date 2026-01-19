@@ -75,10 +75,10 @@ def train():
     )
     
     tmp_parser = argparse.ArgumentParser()
-    tmp_parser.add_argument("--config_file", required=True)
+    tmp_parser.add_argument("--configs", required=True)
     tmp_args, _ = tmp_parser.parse_known_args()
 
-    with open(tmp_args.config_file, "r", encoding="utf-8") as f:
+    with open(tmp_args.configs, "r", encoding="utf-8") as f:
         yaml_dict = yaml.safe_load(f)
     
     model_args, data_args, training_args = parser.parse_dict(yaml_dict)
