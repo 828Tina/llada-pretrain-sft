@@ -20,7 +20,8 @@ Slurm users
     sbatch --nodes=24 --gres=gpu:8 scripts/train.slurm.sh \
         --accelerate_config "fsdp" \
         --script_path "examples/llada/pt.py"
-"""
+"""。。。
+
 
 import functools
 import os

@@ -2,6 +2,7 @@ import os
 import accelerate
 from datasets import load_from_disk,DatasetDict,Dataset
 import torch
+from itertools import chain
 import re
 import datasets
 
@@ -36,6 +37,7 @@ def disable_dataset_caching():
     os.environ["HF_DATASETS_TEMP_DIR"] = tmp_root
     os.makedirs(tmp_root, exist_ok=True)
 
+# ------------------------- PEFT -------------------------------
 # ----- dataset loading and processing -------------------------
 def parse_spec(spec: str):
     """
@@ -160,4 +162,82 @@ def post_process_dataset(
         )
     else:
         raise NotImplementedError
+
+
+
+# ------------------------- Pretrain ---------------------------
+# ----- dataset loading and processing -------------------------
+def load_pt_dataset(dataset_args:str)->DatasetDict:
+    # split dataset_args
+    specs = [p.strip() for p in re.split(r"[|+]", dataset_args) if p.strip()]
+    name,kvs=parse_spec(specs[0])
+
+    # DatasetDict
+    ds = load_from_disk(name)
+
+    # split train/test if specified
+    train_datasets=ds.select(range(kvs.get("train",len(ds))))
+    test_datasets=ds.select(range(kvs.get("train",len(ds)),kvs.get("train",len(ds))+kvs.get("test",len(ds))))
+
+    return DatasetDict({"train":train_datasets,"test":test_datasets})
+
+def tokenize_and_group(
+    examples,
+    tokenizer,
+    text_field: str = "text",
+    seq_length: int = 1024,
+    insert_eos: bool = False,
+    drop_tail: bool = True,
+    add_special_tokens: bool = False,
+):
+    """
+    Tokenize text examples and group into fixed-length sequences.
+
+    Concatenates all tokenized text and splits into chunks of seq_length.
+    Optionally drops incomplete trailing chunks.
+
+    Args:
+        examples: Batch of examples with text field.
+        tokenizer: Tokenizer to use.
+        text_field: Name of the text field in examples.
+        seq_length: Target sequence length for chunks.
+        insert_eos: If True, append EOS token to each text sample.
+        drop_tail: If True, drop incomplete final chunk; if False, keep it.
+        add_special_tokens: Whether to add special tokens during tokenization.
+
+    Returns:
+        Dictionary with input_ids and labels as lists of token sequences.
+    """
+    # 1) Tokenize (batched input)
+    tokenized = tokenizer(examples[text_field], add_special_tokens=add_special_tokens)
+    ids = tokenized["input_ids"]
+
+    # --- optionally append EOS to each sample ---
+    if insert_eos:
+        eos_id = getattr(tokenizer, "eos_token_id")
+        assert eos_id
+        # append EOS only if the sample doesn't already end with it
+        ids = [seq + ([] if (seq and seq[-1] == eos_id) else [eos_id]) for seq in ids]
+    # ----------------------------------------------------------------
+
+    # 2) Flatten and concatenate all token lists
+    concatenated = list(chain.from_iterable(ids))
+    if not concatenated:
+        return {"input_ids": [], "labels": []}  # Safe return for empty batch
+
+    # 3) Calculate the total length based on drop_tail
+    if drop_tail:
+        total_len = (len(concatenated) // seq_length) * seq_length
+        concatenated = concatenated[:total_len]  # Truncate the last incomplete chunk
+    else:
+        total_len = len(concatenated)
+
+    # Split into fixed-length chunks
+    chunks = [concatenated[i : i + seq_length] for i in range(0, total_len, seq_length)]
+
+    return {
+        "input_ids": chunks,
+        "labels": [c[:] for c in chunks],  # Labels are the same as input_ids
+    }
+
 
